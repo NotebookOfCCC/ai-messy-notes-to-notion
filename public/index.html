@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personal English Notes Assistant</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <header class="topbar">
+      <div class="title">Personal English Notes Assistant <span class="powered-by">Powered by Claude, Save to Notion Database</span></div>
+      <button id="saveBtn" class="btn primary">Save to Notion</button>
+    </header>
+
+    <main id="chat" class="chat"></main>
+
+    <footer class="input-bar">
+      <textarea
+        id="input"
+        placeholder="Paste notes or type refine instructions…"
+        rows="3"
+      ></textarea>
+      <button id="sendBtn" class="btn primary">Send</button>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
