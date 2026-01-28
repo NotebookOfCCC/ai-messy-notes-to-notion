@@ -16,12 +16,25 @@
     <main id="chat" class="chat"></main>
 
     <footer class="input-bar">
-      <textarea
-        id="input"
-        placeholder="Paste notes or type refine instructions…"
-        rows="3"
-      ></textarea>
-      <button id="sendBtn" class="btn primary">Send</button>
+      <div class="input-container">
+        <button id="clearBtn" class="icon-btn" title="New Notes">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+        <textarea
+          id="input"
+          placeholder="Paste notes or type refine instructions…"
+          rows="1"
+        ></textarea>
+        <button id="sendBtn" class="send-btn" title="Send">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+          </svg>
+        </button>
+      </div>
     </footer>
   </div>
 

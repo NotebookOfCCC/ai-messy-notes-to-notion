@@ -72,6 +72,18 @@ def process_notes(notes: str) -> Tuple[str, str, List[Dict[str, str]]]:
   ]
 }}
 
+重要规则：
+1. 动词短语必须使用原形（base form）：
+   - "dug into" → "dig into"
+   - "digging into" → "dig into"
+   - "ran out" → "run out"
+   - "was thinking" → "think"
+2. 被动语态短语必须完整，加上 "be"：
+   - "attached by" → "be attached by"
+   - "known as" → "be known as"
+   - "made of" → "be made of"
+3. 例句中的动词可以使用适当的时态，但 english 字段必须是原形
+
 内容：
 {notes}
 """
@@ -125,6 +137,15 @@ def refine_notes(
 
 注意：如果用户说"删除 2"或"remove 2"或"remove item 2"，就删除上面编号为 2 的那一项。
 
+重要规则：
+1. 动词短语必须使用原形（base form）：
+   - "dug into" → "dig into"
+   - "digging into" → "dig into"
+2. 被动语态短语必须完整，加上 "be"：
+   - "attached by" → "be attached by"
+   - "known as" → "be known as"
+3. 例句中的动词可以使用适当的时态，但 english 字段必须是原形
+
 只返回 JSON：
 
 {{
@@ -159,3 +180,113 @@ def refine_notes(
     theme = ensure_theme(data.get("theme", ""), new_items)
     preview = build_preview(new_items, theme)
     return theme, preview, new_items
+
+# ---------- GRAMMAR CHECK ----------
+
+def check_grammar(items: List[Dict[str, str]]) -> Dict[str, Any]:
+    """Check grammar issues in the English phrases and examples."""
+    if not items:
+        return {"checked": True, "issues": []}
+
+    items_text = "\n".join([
+        f"{i+1}. Phrase: {it['english']}\n   Example: {it['example_en']}"
+        for i, it in enumerate(items)
+    ])
+
+    prompt = f"""
+Check the following English phrases and example sentences for grammar issues.
+
+{items_text}
+
+Return ONLY JSON, no explanation:
+{{
+  "has_issues": true/false,
+  "issues": [
+    {{
+      "item_index": 1,
+      "field": "english" or "example_en",
+      "original": "the text with issue",
+      "corrected": "the corrected text",
+      "explanation": "brief explanation in Chinese"
+    }}
+  ]
+}}
+
+Rules:
+- Only report actual grammar mistakes (verb tense, subject-verb agreement, articles, etc.)
+- Do NOT report style preferences or minor punctuation
+- If no issues found, return empty issues array
+- item_index starts from 1
+"""
+
+    r = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=2048,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    try:
+        data = extract_json(r.content[0].text)
+        return {
+            "checked": True,
+            "has_issues": data.get("has_issues", False),
+            "issues": data.get("issues", [])
+        }
+    except:
+        return {"checked": True, "has_issues": False, "issues": []}
+
+# ---------- SUGGESTIONS ----------
+
+def generate_suggestions(items: List[Dict[str, str]], theme: str) -> List[Dict[str, str]]:
+    """Generate related vocabulary suggestions based on theme and existing items."""
+    if not items:
+        return []
+
+    existing_words = [it["english"] for it in items]
+
+    prompt = f"""
+Based on the theme "{theme}" and the following vocabulary items, suggest 3-5 related English phrases/words that the user might also want to learn.
+
+Existing items:
+{json.dumps(existing_words, ensure_ascii=False)}
+
+Return ONLY JSON, no explanation:
+{{
+  "suggestions": [
+    {{
+      "english": "suggested phrase",
+      "chinese": "中文解释",
+      "example_en": "Example sentence in English",
+      "example_zh": "例句中文翻译"
+    }}
+  ]
+}}
+
+Rules:
+- Suggest phrases related to the same theme/topic
+- Do NOT repeat any existing items
+- Keep suggestions practical and commonly used
+- Chinese explanations should be clear and natural
+- Use base form for verbs (e.g., "dig into" not "dug into")
+- Complete passive phrases with "be" (e.g., "be known as" not "known as")
+"""
+
+    r = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=2048,
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    try:
+        data = extract_json(r.content[0].text)
+        suggestions = []
+        for it in data.get("suggestions", []):
+            suggestions.append({
+                "english": norm(it["english"]),
+                "chinese": norm(it["chinese"]),
+                "example_en": norm(it["example_en"]),
+                "example_zh": norm(it["example_zh"]),
+            })
+        return suggestions
+    except:
+        return []

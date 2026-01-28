@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import List, Dict, Any
 from fastapi.staticfiles import StaticFiles
 
-from backend.gpt import process_notes, refine_notes
+from backend.gpt import process_notes, refine_notes, generate_suggestions, check_grammar
 from backend.notion import save_items_to_notion
 
 app = FastAPI()
@@ -27,10 +27,14 @@ class SavePayload(BaseModel):
 @app.post("/api/process")
 def api_process(p: ProcessPayload):
     theme, preview, items = process_notes(p.notes)
+    grammar_result = check_grammar(items)
+    suggestions = generate_suggestions(items, theme)
     return {
         "theme": theme,
         "preview": preview,
-        "items": items
+        "items": items,
+        "grammar": grammar_result,
+        "suggestions": suggestions
     }
 
 @app.post("/api/refine")
